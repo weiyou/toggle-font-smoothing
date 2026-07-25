@@ -1,80 +1,101 @@
-# toggle-font-smoothing
+# font-smoothing
 
-Toggle **legacy LCD / subpixel font smoothing** on macOS — the setting that makes text look sharp on non-Retina displays (especially useful when you use an Apple Thunderbolt Display or similar alongside a Retina screen).
+Small macOS CLI for **font smoothing** — both the legacy LCD / subpixel path and the strength knob (`AppleFontSmoothing`).
 
-Apple disabled this by default after Mojave. On external non-Retina monitors, text can look thin or blurry. This script turns it back on (or off) with one command.
+Handy when:
 
-## Why this exists
+- Text looks thin or soft on a **non-Retina** external (e.g. Apple Thunderbolt Display)
+- Text looks a bit **too thick** on **Retina** (e.g. Studio Display + Terminal) and you want a lighter setting
 
-When a Retina Mac is connected to a non-Retina external display, macOS often leaves subpixel antialiasing off. That hurts readability on older LCDs. This tool flips the relevant defaults:
+## Two related controls
 
-| Key | Purpose |
-|-----|---------|
-| `CGFontRenderingFontSmoothingDisabled` | Master switch for legacy font smoothing |
-| `AppleFontSmoothing` | Strength: 0 off → 1 light → 2 medium → 3 strong |
+| Key | What it does |
+|-----|----------------|
+| `CGFontRenderingFontSmoothingDisabled` | Master switch for the legacy LCD / subpixel path |
+| `AppleFontSmoothing` | Strength: **0** off → **1** light → **2** medium → **3** strong |
 
-## Requirements
+They belong together: strength alone does little if the legacy path is off. This tool manages both in one place (no need for a second script).
 
-- macOS (tested on modern versions; uses standard `defaults`)
-- No extra dependencies
+**System-wide** (via `defaults`), not Terminal-only. Quit and reopen Terminal (or log out/in) after changes.
 
 ## Install
 
 ```bash
-# clone
 git clone https://github.com/weiyou/toggle-font-smoothing.git
 cd toggle-font-smoothing
 
-# optional: put it on your PATH
-chmod +x toggle-font-smoothing.sh
-ln -s "$(pwd)/toggle-font-smoothing.sh" /usr/local/bin/toggle-font-smoothing
+chmod +x font-smoothing.sh
+# optional PATH install
+ln -s "$(pwd)/font-smoothing.sh" /usr/local/bin/font-smoothing
 ```
 
-Or run it directly:
-
-```bash
-./toggle-font-smoothing.sh
-```
+`toggle-font-smoothing.sh` is a symlink to the same script (old name still works).
 
 ## Usage
 
 ```bash
-# show current status
-./toggle-font-smoothing.sh
+# show current settings
+./font-smoothing.sh
 
-# enable (medium strength — good default for non-Retina)
-./toggle-font-smoothing.sh --enable
-# or: -e
+# enable legacy LCD path (sets strength to medium)
+./font-smoothing.sh enable
 
-# disable (restore macOS default)
-./toggle-font-smoothing.sh --disable
-# or: -d
+# disable / restore macOS default
+./font-smoothing.sh disable
 
-# help
-./toggle-font-smoothing.sh --help
+# set strength only (0–3)
+./font-smoothing.sh level 1    # light — good if Terminal feels too heavy on Retina
+./font-smoothing.sh level 0    # off — thinnest
+./font-smoothing.sh level 2    # medium — classic non-Retina feel
+./font-smoothing.sh level 3    # strong
+
+# shorthand
+./font-smoothing.sh 1          # same as: level 1
+./font-smoothing.sh level      # print strength only
 ```
 
-**Important:** After enabling or disabling, log out and back in (or restart) so the change fully applies.
+Aliases: `on` / `off`, `-e` / `-d`, `status` / `show`.
 
-## Example output
+### Strength guide
+
+| Level | Name   | When to use |
+|------:|--------|-------------|
+| 0 | off | Thinnest; often preferred on pure Retina |
+| 1 | light | Slightly smoothed; try if medium feels thick in Terminal |
+| 2 | medium | Default when you `enable`; solid for non-Retina LCDs |
+| 3 | strong | Heaviest |
+
+## Example: thinner Terminal on Studio Display
+
+If you like the non-Retina LCD look but Terminal is a bit heavy on a Retina panel:
+
+```bash
+./font-smoothing.sh enable   # if not already on
+./font-smoothing.sh level 1  # or 0
+# then quit and reopen Terminal
+```
+
+## Example status
 
 ```
-Legacy LCD / Subpixel Font Smoothing
--------------------------------------
-Status: ENABLED
+macOS Font Smoothing
+----------------------
+Legacy LCD / subpixel: ENABLED
+Strength (AppleFontSmoothing): 1 (light)
 
 Details:
   CGFontRenderingFontSmoothingDisabled = 0
-  AppleFontSmoothing = 2 (medium)
+  AppleFontSmoothing = 1 (light)
 
-Note: Changes require logout/login or restart to fully take effect.
+Note: Changes often need logout/login, or at least quit/reopen the app (e.g. Terminal).
 ```
 
 ## Notes
 
-- Enabling sets `AppleFontSmoothing` to **2 (medium)**, a sensible default for non-Retina LCDs.
-- Disabling removes the strength key and restores the post-Mojave default (smoothing off).
-- Safe to re-run; it only touches the two font-smoothing related defaults above.
+- `enable` turns the legacy path on and sets strength to **2 (medium)**; use `level` afterward to fine-tune.
+- `disable` turns the legacy path off and clears `AppleFontSmoothing`.
+- Setting `level` 1–3 enables the legacy path if it was off.
+- Only those two defaults are touched.
 
 ## License
 
